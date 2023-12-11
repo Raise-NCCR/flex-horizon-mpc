@@ -1,4 +1,4 @@
-function y = carOutputFcn(x, u, Ts, k, xyref)
+function y = carOutputFcn(x, u, Ts)
 
 y = x(5);
 

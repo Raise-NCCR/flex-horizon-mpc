@@ -1,11 +1,11 @@
 clear all;
 clc;
 
-load('xypath.mat');
+load('path.mat');
 load('xHistory.mat');
 
 figure(1);
-plot(xypath(:,1), xypath(:,2));
+plot(pathRef(1,:), pathRef(2,:));
 axis equal;
 
 %%
