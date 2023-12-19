@@ -20,31 +20,34 @@ iz = 1550;
 jark = u(:,1);
 delta = u(:,2);
 
-q1 = 10;
+% q1 = 1;
+% q2 = 1;
+% q3 = 0.65;
+% q4 = 0.34;
+% q5 = 0.01;
+
+q1 = 0.0025;
 q2 = 1;
-q3 = 1;
-q4 = 1;
-q5 = 1;
+q3 = 0.1625;
+q4 = 0.085;
+q5 = 0.0025;
 
 p = data.PredictionHorizon;
 
 J = 0;
 for i = 2:p+1
-    % J = J + ( (q1 * ((16.6-v)^2)) + (q2 * (wze^2)) + (q3 * (xJark ^ 2)) + (q4 * (ax^2)) + (q5 * (ay^2)) );
-    ay1 = 0;
-    wzDot1 = 0;
-    if (vx(i) == 0)
-        ay1 = 0;
-        wzDot1 = 0;
-    else
-        ay1 = -((2*caf+2*car)/(mass*vx(i)))*vy(i) - (vx(i)+((2*caf*lf-2*car*lr)/(mass*vx(i))))*wz(i);
-        wzDot1 = -((2*caf*lf-2*car*lr)/(iz*vx(i)))*vy(i) - ((2*caf*lf^2+2*car*lr^2)/(iz*vx(i)))*wz(i);
+    ay = ((2*caf)/mass)*delta(i); 
+    wzDot = ((2*caf*lf)/iz)*delta(i);
+    if (vx(i) ~= 0)
+       ay = ay - ((2*caf+2*car)/(mass*vx(i)))*vy(i) - vx(i)*wz(i)-((2*caf*lf-2*car*lr)/(mass*vx(i)))*wz(i);
+       wzDot = wzDot - ((2*caf*lf-2*car*lr)/(iz*vx(i)))*vy(i) - ((2*caf*(lf^2)+2*car*(lr^2))/(iz*vx(i)))*wz(i);
     end
-    
-    ay = ay1 + ((2*caf)/mass)*delta(i);
-    wzDot = wzDot1 + ((2*caf*lf)/iz)*delta(i);
+     
     xJark = jark(i)^2 - ay * wz(i) - vy(i) * wzDot;
     v = sqrt((cos(psi(i)) * vx(i))^2 + (sin(psi(i)) * vy(i))^2);
-    J = J + ye(i)^2 + wze(i) ^ 2;
+    % J = J + ( (q1 * ((16.6-v)^2)) + (q3 * (xJark ^ 2)) + (q4 * (ax^2)) + (q5 * (ay^2)) );
+    J = J + (q1 * (16.6 - vx(i))) + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
+    % J = J + ye(i)^2 + wze(i) ^ 2;
+    % J = J + (16 - vx(i))^2;
 end
 

@@ -33,8 +33,8 @@ car = patch('XData', carX, 'YData', carY, 'FaceColor', 'none');
 
 carPath = plot(xHistory(8,1), xHistory(9,1), 'Color', '#D95319');
 
-xlim([-400, 1100]);
-ylim([-200, 1200]);
+xlim([-100, 300]);
+ylim([-100, 300]);
 
 legend("reference", "actual (rear)", "actual (front)");
 title("Vehicle Control by Non-linear MPC");

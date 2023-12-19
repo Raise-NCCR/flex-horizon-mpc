@@ -13,7 +13,7 @@ xy = [0, 0; % (x,y) points where car moves
       700, 900;
       1000, 600];
 
-xy = xy/5;
+xy = xy;
 
 % xy = [0, 0;
 %       200, -10;

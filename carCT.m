@@ -10,7 +10,7 @@ psi = xState(7);
 px = xState(8);
 py = xState(9);
 
-u = uInput(1);
+jark = uInput(1);
 delta = uInput(2);
 
 mass = 1100;
@@ -20,26 +20,23 @@ lf = 1.15;
 lr = 1.35;
 iz = 1600;
 
-vyDot1 = 0;
-wzDot1 = 0;
-if (vx == 0)
-    vyDot1 = 0;
-    wzDot1 = 0;
-else
-    vyDot1 = -((2*caf+2*car)/(mass*vx))*vy - vx*wz-((2*caf*lf-2*car*lr)/(mass*vx))*wz;
-    wzDot1 = -((2*caf*lf-2*car*lr)/(iz*vx))*vy - ((2*caf*(lf^2)+2*car*(lr^2))/(iz*vx))*wz;
+vyDot = ((2*caf)/mass)*delta; 
+% vyDot = 0;
+wzDot = ((2*caf*lf)/iz)*delta;
+% wzDot = 0;
+if (vx ~= 0)
+    vyDot = vyDot - ((2*caf+2*car)/(mass*vx))*vy - vx*wz-((2*caf*lf-2*car*lr)/(mass*vx))*wz;
+    wzDot = wzDot - ((2*caf*lf-2*car*lr)/(iz*vx))*vy - ((2*caf*(lf^2)+2*car*(lr^2))/(iz*vx))*wz;
 end
 
-% axDot = u;
+axDot = jark;
 vxDot = ax;
-vyDot = vyDot1 + ((2*caf)/mass)*delta; 
-wzDot = wzDot1  + ((2*caf*lf)/iz)*delta;
 yeDot = vy + vx * wze;
 wzeDot = -k * vx + wz;
 psiDot = wz;
 pxDot = cos(psi) * vx - sin(psi) * vy;
 pyDot = sin(psi) * vx + cos(psi) * vy;
 
-axDot = 0;
+% axDot = 0;
 
-dxStatedt = [axDot, vxDot, vyDot, wzDot, yeDot, wzeDot, psiDot, pxDot, pyDot, k];
+dxStatedt = [axDot, vxDot, vyDot, wzDot, yeDot, wzeDot, psiDot, pxDot, pyDot];
