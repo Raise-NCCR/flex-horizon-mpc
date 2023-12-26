@@ -1,4 +1,4 @@
-function J = carCostFcn(x, u, e, data, Ts)
+function J = carCostFcn(x, u, e, data, Ts, inCurve)
 
 ax = x(:,1);
 vx = x(:,2);
@@ -26,7 +26,7 @@ delta = u(:,2);
 % q4 = 0.34;
 % q5 = 0.01;
 
-q1 = 0.0025;
+q1 = 0.25;
 q2 = 1;
 q3 = 0.1625;
 q4 = 0.085;
@@ -46,8 +46,15 @@ for i = 2:p+1
     xJark = jark(i)^2 - ay * wz(i) - vy(i) * wzDot;
     v = sqrt((cos(psi(i)) * vx(i))^2 + (sin(psi(i)) * vy(i))^2);
     % J = J + ( (q1 * ((16.6-v)^2)) + (q3 * (xJark ^ 2)) + (q4 * (ax^2)) + (q5 * (ay^2)) );
-    J = J + (q1 * (16.6 - vx(i))) + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
+    if (inCurve)
+        J = J + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
+    else
+        J = J + (q1 * (16 - vx(i))^2) + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
+    end
+    if (vx(i) > 17)
+        J = 10000;
+    end
     % J = J + ye(i)^2 + wze(i) ^ 2;
-    % J = J + (16 - vx(i))^2;
+    % J = J + (16 - vx(i))^4;
 end
 
