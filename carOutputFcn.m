@@ -1,4 +1,4 @@
-function y = carOutputFcn(x, u, Ts, inCurve)
+function y = carOutputFcn(x, u, Ts, inCurve, inStopping)
 
 y = x;
 

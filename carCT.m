@@ -1,4 +1,4 @@
-function dxStatedt = carCT(xState, uInput, k)
+function dxStatedt = carCT(xState, uInput)
 
 ax = xState(1);
 vx = xState(2);
@@ -9,8 +9,9 @@ wze = xState(6);
 psi = xState(7);
 px = xState(8);
 py = xState(9);
+b = xState(14);
 
-jark = uInput(1);
+xJerk = uInput(1);
 delta = uInput(2);
 
 mass = 1100;
@@ -24,19 +25,22 @@ vyDot = ((2*caf)/mass)*delta;
 % vyDot = 0;
 wzDot = ((2*caf*lf)/iz)*delta;
 % wzDot = 0;
+bDot = 0;
 if (vx ~= 0)
     vyDot = vyDot - ((2*caf+2*car)/(mass*vx))*vy - vx*wz-((2*caf*lf-2*car*lr)/(mass*vx))*wz;
     wzDot = wzDot - ((2*caf*lf-2*car*lr)/(iz*vx))*vy - ((2*caf*(lf^2)+2*car*(lr^2))/(iz*vx))*wz;
+    bDot = (vyDot * vx - ax*vy)/(vx^2);
 end
 
-axDot = jark;
+axDot = xJerk;
 vxDot = ax;
 yeDot = vy + vx * wze;
-wzeDot = -k * vx + wz;
+% wzeDot = -k * vx + wz;
+wzeDot = 0;
 psiDot = wz;
 pxDot = cos(psi) * vx - sin(psi) * vy;
 pyDot = sin(psi) * vx + cos(psi) * vy;
 
 % axDot = 0;
 
-dxStatedt = [axDot, vxDot, vyDot, wzDot, yeDot, wzeDot, psiDot, pxDot, pyDot];
+dxStatedt = [axDot, vxDot, vyDot, wzDot, yeDot, wzeDot, psiDot, pxDot, pyDot, bDot];
