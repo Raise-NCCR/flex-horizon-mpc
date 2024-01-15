@@ -3,7 +3,7 @@ mpcverbosity('off');
 
 % nx = 9; % ax, vx, vy, wz, ye, wze, psi, px, py
 % ny = 9; % same as x
-nx = 14; % ax, vx, vy, wz, ye, wze, psi, px, py
+nx = 14; % v, a, b, wz, psi, x, y, dist, ax, ay, bDot, wzDot, xJerk, yJerk
 ny = 14; % same as x
 nu = 2; % j, delta
 nlobj = nlmpc(nx, ny, nu);
@@ -17,8 +17,8 @@ k = 0;
 % ref = [0, 16.7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 ref = [];
 nlobj.Ts = TsShort;
-nlobj.PredictionHorizon = 15;
-nlobj.ControlHorizon = 10;
+nlobj.PredictionHorizon = 30;
+nlobj.ControlHorizon = 18;
 
 % nlobj.States(2).Min = 0;
 % nlobj.States(2).Max = 16.6;
@@ -28,16 +28,16 @@ nlobj.ControlHorizon = 10;
 nlobj.MV(1).Min = -2;
 nlobj.MV(1).Max = 2;
 nlobj.MV(2).Min = 0;
-nlobj.MV(2).Max = 0.087;
-nlobj.MV(2).RateMin = -0.087;
-nlobj.MV(2).RateMax = 0.087;
+nlobj.MV(2).Max = 0.2;
+nlobj.MV(2).RateMin = -0.1;
+nlobj.MV(2).RateMax = 0.1;
 
-nlobj.OV(2).Min = 8;
-nlobj.OV(2).Max = 16.7;
-% nlobj.OV(3).Min = -1;
-% nlobj.OV(3).Max = 1;
-nlobj.OV(13).Min = -0.65;
-nlobj.OV(13).Max = 0.65;
+nlobj.OV(1).Min = 5;
+nlobj.OV(1).Max = 16.7;
+nlobj.OV(9).Min = -1;
+nlobj.OV(13).Min = -1;
+nlobj.OV(8).Min = -0.65;
+nlobj.OV(8).Max = 0.65;
 
 nlobj.Model.StateFcn = "carDT";
 nlobj.Model.IsContinuousTime = false;
@@ -47,7 +47,7 @@ nlobj.Optimization.CustomCostFcn = "carCostFcn";
 nlobj.Optimization.ReplaceStandardCost = true;
 
 % x0 = [0; 10; 0; 0; 0; 0; 0; 0; 0];
-x0 = [0; 16.7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
+x0 = [16.7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
 y0 = x0;
 u0 = [0; 0];
 inCurve = false;
@@ -66,7 +66,7 @@ mv = [0; 0];
 nloptions = nlmpcmoveopt;
 nloptions.Parameters = {Ts, inCurve, inStopping};
 
-Duration = 5;
+Duration = 10;
 tLength = Duration / Ts;
 xHistory = zeros(length(x(:,1)), 51);
 xHistory(:, 1) = x0;
@@ -83,20 +83,22 @@ load("zhouXYPath.mat");
 index = 1;
 t = 0;
 endPoint = false;
+tic
 while t < Duration
     t
     xk = correct(EKF, y);
-    i = dsearchn(pathRef(1:2,:)', [xk(8) xk(9)]);
-    % if (i == length(pathRef(1,:)))
-    %    break;
-    % end
+    xk(1)
+    i = dsearchn(pathRef(1:2,:)', [xk(6) xk(7)]);
+    if (i == length(pathRef(1,:)))
+       break;
+    end
     TsTmp = TsLong;
     inCurve = false;
     inStopping = false;
     
     % simple position prediction
-    pred_px = xk(8) + 3 * (cos(xk(7)) * xk(2) - sin(xk(7)) * xk(3));
-    pred_py = xk(9) + 3 * (sin(xk(7)) * xk(2) + cos(xk(7)) * xk(3));
+    pred_px = xk(6) + 3 * (cos(xk(5)) * xk(1) - sin(xk(5)) * xk(1) * xk(3));
+    pred_py = xk(7) + 3 * (sin(xk(5)) * xk(1) + cos(xk(5)) * xk(1) * xk(3));
 
     pred_i = dsearchn(pathRef(1:2,:)', [pred_px pred_py]);
     max_k = max(pathRef(3,i:pred_i));
@@ -111,7 +113,7 @@ while t < Duration
     elseif (max_k > 0.003)
         TsTmp = TsShort;
         inCurve = true;
-    elseif(min_k < -0.003)
+    elseif(min_k < -0.01)
         TsTmp = TsShort;
         inCurve = true;
     elseif(pred_i == length(pathRef))
@@ -121,122 +123,122 @@ while t < Duration
     predict(EKF,[mv; Ts; inCurve; inStopping]);
     x = carDT(x, mv, Ts, inCurve, inStopping);
     y = x;
-    mvHistory(:, index) = mv;
     index = index + 1;
     xHistory(:, index) = x;
+    mvHistory(:, index) = mv;
     if (~inCurve)
-        mvHistory(:, index) = mv;
         index = index + 1;
         xHistory(:, index) = x;
+        mvHistory(:, index) = mv;
     end
+    
+
     t = t + TsTmp;
 end
-
+toc
 save("xHistory", "xHistory");
 save("mvHistory", "mvHistory");
-
-[r,a_y,da_y,xJerk] = ridecomfort_x(Ts,xHistory(1,:),mvHistory(1,:));
-
-time = (0:TsShort:5);
-
-load('zhouState.mat');
-load('zhouHis.mat');
-
-[zhouR,zhouAy,zhouDay,zhouXJerk] = ridecomfort(Ts,zhouState(:,1:100:end),zhouHistory(9:10,1:100:end));
-
-figure;
-subplot(2,5,1);
-plot(time',zhouHistory(9,1:100:end),'k')
-hold on
-subplot(2,5,2);
-plot(time',zhouState(2,1:100:end),'k')
-hold on
-subplot(2,5,3);
-plot(time',zhouState(1,1:100:end),'k')
-hold on
-subplot(2,5,4);
-plot(time',zhouAy,'k')
-hold on
-subplot(2,5,5);
-plot(time',zhouState(4,1:100:end),'k')
-hold on
-subplot(2,5,6);
-plot(time',zhouState(14,1:100:end),'k')
-hold on
-subplot(2,5,7);
-plot(time',zhouR,'k')
-hold on
-subplot(2,5,8);
-plot(time',zhouDay,'k')
-hold on
-subplot(2,5,9);
-plot(time',zhouHistory(9,1:100:end),'k')
-hold on
-subplot(2,5,10);
-plot(time',zhouHistory(10,1:100:end),'k')
-hold on
-subplot(2,5,1);
-plot(time',mvHistory(1,1:length(time)),'r');
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('Jerk [m/s^3]');
-subplot(2,5,2);
-plot(time',xHistory(2,1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('Velocity [m/s]');
-subplot(2,5,3);
-plot(time',xHistory(1,1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('Acceleration [m/s^2]');
-subplot(2,5,4);
-plot(time',a_y(1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('Lateral acceleration [m/s^2]');
-subplot(2,5,5);
-plot(time',xHistory(4,1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('Yaw rate [rad/s]');
-subplot(2,5,6);
-plot(time',xHistory(14,1:length(time)),'r')
-legend('制御なし','従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('Sideslip angle [rad]');
-subplot(2,5,7);
-plot(time',r(1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('d(t)');
-subplot(2,5,8);
-plot(time',da_y(1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('da_y/dt [m/s^3]');
-subplot(2,5,9);
-plot(time',mvHistory(1,1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('jerk [m/s^3]');
-subplot(2,5,10);
-plot(time',mvHistory(2,1:length(time)),'r')
-legend('従来法','提案法');
-grid on
-xlabel('Time [s]');
-ylabel('jerk [m/s^3]');
-savefig('result.fig')
-
+% 
+% [r,a_y,da_y,xJerk] = ridecsdomfort(Ts,xHistory,mvHistory);
+% 
+% time = (0:TsShort:5);
+% 
+% load('zhouState.mat');
+% load('zhouHis.mat');
+% 
+% figure;
+% subplot(2,5,1);
+% plot(time',zhouHistory(1,1:100:end),'k')
+% hold on
+% subplot(2,5,2);
+% plot(time',zhouState(2,1:100:end),'k')
+% hold on
+% subplot(2,5,3);
+% plot(time',zhouHistory(3,1:100:end),'k')
+% hold on
+% subplot(2,5,4);
+% plot(time',zhouHistory(4,1:100:end),'k')
+% hold on
+% subplot(2,5,5);
+% plot(time',zhouHistory(5,1:100:end),'k')
+% hold on
+% subplot(2,5,6);
+% plot(time',zhouHistory(6,1:100:end),'k')
+% hold on
+% subplot(2,5,7);
+% plot(time',zhouHistory(7,1:100:end),'k')
+% hold on
+% subplot(2,5,8);
+% plot(time',zhouHistory(8,1:100:end),'k')
+% hold on
+% subplot(2,5,9);
+% plot(time',zhouHistory(9,1:100:end),'k')
+% hold on
+% subplot(2,5,10);
+% plot(time',zhouHistory(10,1:100:end),'k')
+% hold on
+% subplot(2,5,1);
+% plot(time',mvHistory(1,1:length(time)),'r');
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('Jerk [m/s^3]');
+% subplot(2,5,2);
+% plot(time',xHistory(2,1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('Velocity [m/s]');
+% subplot(2,5,3);
+% plot(time',xHistory(1,1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('Acceleration [m/s^2]');
+% subplot(2,5,4);
+% plot(time',a_y(1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('Lateral acceleration [m/s^2]');
+% subplot(2,5,5);
+% plot(time',xHistory(4,1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('Yaw rate [rad/s]');
+% subplot(2,5,6);
+% plot(time',xHistory(14,1:length(time)),'r')
+% legend('制御なし','従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('Sideslip angle [rad]');
+% subplot(2,5,7);
+% plot(time',r(1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('d(t)');
+% subplot(2,5,8);
+% plot(time',da_y(1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('da_y/dt [m/s^3]');
+% subplot(2,5,9);
+% plot(time',mvHistory(1,1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('jerk [m/s^3]');
+% subplot(2,5,10);
+% plot(time',mvHistory(2,1:length(time)),'r')
+% legend('従来法','提案法');
+% grid on
+% xlabel('Time [s]');
+% ylabel('jerk [m/s^3]');
+% savefig('result.fig')
+% 
 % figure;
 % plot(xHistory(14,:), xHistory(1,:));
 % title("a-t");

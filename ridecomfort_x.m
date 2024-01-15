@@ -1,23 +1,16 @@
-function[r] = ridecomfort_x(N,a,da)
+function r = ridecomfort_x(Ts,xState)
 
+ax = xState(9,:);
+xJerk = xState(13,:);
 
 %debug%
 %N=0.1;Tf=3.5;
 %a=[0,randi([-5,5],1,34)];
 %da=[0,randi([-5,5],1,34)];
 %debug%
-num = length(a);
-tmp_a = zeros(1,num);
-tmp_da = zeros(1,num);
-tmp_a2 = zeros(1,num);
-tmp_da2 = zeros(1,num);
-ap = zeros(1,num);
-am = zeros(1,num);
-jrp = zeros(1,num);
-jrm = zeros(1,num);
-r = zeros(1,num);
+num = length(xState(13,:));
 pt = 3;
-s = pt/N;
+s = pt/Ts;
 b_1 = 0.19;
 b_2 = 0.53;
 b_3 = 0.27;
@@ -29,9 +22,9 @@ b_4 = 0.34;
 for i=1:1:num
     
         
-            tmp_a(i) = a(i);
+            tmp_a(i) = ax(i);
             %tmp_ma = find(tmp_a < 0); %負の値を探す
-            tmp_da(i) = da(i);
+            tmp_da(i) = xJerk(i);
             
      if(i <= s) %3秒間まで
 %             ap(i) = max(tmp_a); %正のピーク値を探す
@@ -73,8 +66,8 @@ for i=1:1:num
     else %3秒以上のとき
        l=1;
         for k=i-s:1:i
-            tmp_a2(l) = a(k);
-            tmp_da2(l) = da(k);
+            tmp_a2(l) = ax(k);
+            tmp_da2(l) = xJerk(k);
           l=l+1;
         end
         
@@ -102,13 +95,13 @@ for i=1:1:num
            for j=1:1:s
              sum = sum + tmp_da2(j)^2;
            end
-             jrp(i) = sqrt(sum*N/pt);  
+             jrp(i) = sqrt(sum*Ts/pt);  
              jrm(i) = 0;
         else
            for j=1:1:s
              sum = sum+tmp_da2(j)^2;
            end
-             jrm(i) = sqrt(sum*N/pt); 
+             jrm(i) = sqrt(sum*Ts/pt); 
              jrp(i) = 0;
         end
         
