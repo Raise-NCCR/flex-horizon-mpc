@@ -1,4 +1,4 @@
-function J = carCostFcn(xState, ~, ~, data, ~, inCurve, inStopping)
+function J = carCostFcn(xState, ~, ~, data, ~, inCurve, ~)
 
 v = xState(:,1);
 dist = xState(:,8);
@@ -10,6 +10,9 @@ q1 = 0.5;
 q2 = 0.2;
 q3 = 0.15;
 q4 = 0.15;
+% q2 = 0.325;
+% q3 = 0.17;
+% q4 = 0.005;
 
 p = data.PredictionHorizon;
 
@@ -23,7 +26,11 @@ for i = 2:p+1
     % else
     %     J = J + (q1 * (16 - vx(i))^2) + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
     % end
-    J = J + ((2*q2)^2 * (xJerk(i) ^ 2)) + ((2*q3)^2 * (ax(i)^2)) + ((2*q4)^2 * (ay(i)^2));
+    if (inCurve == true)
+        J = J + ((2*q2)^2 * (xJerk(i) ^ 2)) + ((2*q3)^2 * (ax(i)^2)) + ((2*q4)^2 * (ay(i)^2));
+    else
+        J = J + ((q1^2)*((16.7-v(i))^2)) + ((q2)^2 * (xJerk(i) ^ 2)) + ((q3)^2 * (ax(i)^2)) + ((q4)^2 * (ay(i)^2));
+    end
     if (v(i) > 17)
         J = 10000;
     end

@@ -1,10 +1,9 @@
 mpcverbosity('off');
 
-
 % nx = 9; % ax, vx, vy, wz, ye, wze, psi, px, py
 % ny = 9; % same as x
-nx = 14; % v, a, b, wz, psi, x, y, dist, ax, ay, bDot, wzDot, xJerk, yJerk
-ny = 14; % same as x
+nx = 15; % v, a, b, wz, psi, x, y, dist, ax, ay, bDot, wzDot, xJerk, yJerk, xJerk2
+ny = 15; % same as x
 nu = 2; % j, delta
 nlobj = nlmpc(nx, ny, nu);
 
@@ -25,19 +24,21 @@ nlobj.ControlHorizon = 18;
 % nlobj.States(3).Min = -16.6;
 % nlobj.States(3).Max = 16.6;
 
-nlobj.MV(1).Min = -2;
-nlobj.MV(1).Max = 2;
-nlobj.MV(2).Min = 0;
-nlobj.MV(2).Max = 0.2;
-nlobj.MV(2).RateMin = -0.1;
-nlobj.MV(2).RateMax = 0.1;
+nlobj.MV(1).Min = -1;
+nlobj.MV(1).Max = 1;
+nlobj.MV(2).Min = -1.57;
+nlobj.MV(2).Max = 1.57;
 
 nlobj.OV(1).Min = 5;
 nlobj.OV(1).Max = 16.7;
+nlobj.OV(9).Max = 2;
 nlobj.OV(9).Min = -1;
 nlobj.OV(13).Min = -1;
+nlobj.OV(13).Max = 1;
 nlobj.OV(8).Min = -0.65;
 nlobj.OV(8).Max = 0.65;
+% nlobj.OV(8).Min = -1;
+% nlobj.OV(8).Max = 1;
 
 nlobj.Model.StateFcn = "carDT";
 nlobj.Model.IsContinuousTime = false;
@@ -47,11 +48,15 @@ nlobj.Optimization.CustomCostFcn = "carCostFcn";
 nlobj.Optimization.ReplaceStandardCost = true;
 
 % x0 = [0; 10; 0; 0; 0; 0; 0; 0; 0];
-x0 = [16.7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
+x0 = [16.7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
 y0 = x0;
 u0 = [0; 0];
 inCurve = false;
 inStopping = false;
+
+global pathRef
+load("path.mat");
+% load("zhouXYPath.mat");
 
 % nlobj.Optimization.CustomEqConFcn = "endConFcn";
 nlobj.Model.NumberOfParameters = 3;
@@ -66,7 +71,7 @@ mv = [0; 0];
 nloptions = nlmpcmoveopt;
 nloptions.Parameters = {Ts, inCurve, inStopping};
 
-Duration = 10;
+Duration = 1000;
 tLength = Duration / Ts;
 xHistory = zeros(length(x(:,1)), 51);
 xHistory(:, 1) = x0;
@@ -77,11 +82,12 @@ mvHistory(:, 1) = mv;
 % xyHistory = zeros(2, tLength);
 % xyHistory(:, 1) = [0; 0];
 
-% load("path.mat");
-load("zhouXYPath.mat");
+% % load("path.mat");
+% load("zhouXYPath.mat");
 
 index = 1;
 t = 0;
+started = false;
 endPoint = false;
 tic
 while t < Duration
@@ -89,11 +95,9 @@ while t < Duration
     xk = correct(EKF, y);
     xk(1)
     i = dsearchn(pathRef(1:2,:)', [xk(6) xk(7)]);
-    if (i == length(pathRef(1,:)))
+    if (i > length(pathRef(1,:)) - 1000)
        break;
     end
-    TsTmp = TsLong;
-    inCurve = false;
     inStopping = false;
     
     % simple position prediction
@@ -110,15 +114,18 @@ while t < Duration
     elseif(any(isnan(min_k), 'all'))
         TsTmp = TsShort;
         inCurve = true;
-    elseif (max_k > 0.003)
+    elseif (max_k > 0.006)
         TsTmp = TsShort;
         inCurve = true;
-    elseif(min_k < -0.01)
+    elseif(min_k < -0.006)
         TsTmp = TsShort;
         inCurve = true;
-    elseif(pred_i == length(pathRef))
-        inStopping = true;
+    else
+        % TsTmp = TsShort;
+        TsTmp = TsLong;
+        inCurve = false;
     end
+    nloptions.Parameters = {Ts, inCurve, inStopping};
     [mv,nloptions] = nlmpcmove(nlobj,x,mv,ref,[],nloptions);
     predict(EKF,[mv; Ts; inCurve; inStopping]);
     x = carDT(x, mv, Ts, inCurve, inStopping);
@@ -126,11 +133,11 @@ while t < Duration
     index = index + 1;
     xHistory(:, index) = x;
     mvHistory(:, index) = mv;
-    if (~inCurve)
-        index = index + 1;
-        xHistory(:, index) = x;
-        mvHistory(:, index) = mv;
-    end
+    % if (~inCurve)
+    %     index = index + 1;
+    %     xHistory(:, index) = x;
+    %     mvHistory(:, index) = mv;
+    % end
     
 
     t = t + TsTmp;

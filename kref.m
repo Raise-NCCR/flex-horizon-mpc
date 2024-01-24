@@ -14,11 +14,12 @@ clc;
 %       1000, 600];
 
 xy = [0, 0; % (x,y) points where car moves
-      500, 50;
-      700, 500
+      500, 200;
+      500, 500;
+      100, 500;
       ];
 
-xy = xy/4;
+xy = xy/2;
 
 % xy = [0, 0;
 %       200, -10;
@@ -41,8 +42,8 @@ pathRef = [x; y; kRef];
 figure;
 plot(pathRef(1,:), pathRef(2,:));
 title("car reference trajectory");
-xlabel("x");
-ylabel("y");
+xlabel("x[m]");
+ylabel("y[m]");
 
 save('path', 'pathRef');
 

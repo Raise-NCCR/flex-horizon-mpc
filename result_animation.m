@@ -1,9 +1,9 @@
 clear all;
 clc;
 
-% load('path.mat');
-load('zhouXYPath.mat');
-load('xHistory.mat');
+load('path.mat');
+% load('zhouXYPath.mat');
+load('xHistory3-1.mat');
 
 figure(3);
 plot(pathRef(1,:), pathRef(2,:));
@@ -37,7 +37,7 @@ carPath = plot(xHistory(6,1), xHistory(7,1), 'Color', '#D95319');
 xlim([-10, 100]);
 ylim([-10, 100]);
 
-legend("reference", "actual (rear)", "actual (front)");
+legend("reference", "car");
 title("Vehicle Control by Non-linear MPC");
 xlabel("x");
 ylabel("y");

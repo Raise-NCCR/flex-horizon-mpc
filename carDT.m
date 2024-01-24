@@ -1,4 +1,4 @@
-function xk1 = carDT(xk, uk, Ts, inCurve, inStopping)
+function xk1 = carDT(xk, uk, Ts, ~, ~)
 
 M = 10;
 delta = Ts / M;
@@ -7,11 +7,13 @@ finished = false;
 
 ratio = 2;
 
-% load('path.mat');
-load("zhouXYPath.mat");
+% % load('path.mat');
+% load("zhouXYPath.mat");
 
-[i, dist] = dsearchn(pathRef(1:2,:)', [xk1(6) xk1(7)]);
-k = pathRef(3,i);
+global pathRef
+
+[i, ~] = dsearchn(pathRef(1:2,:)', [xk1(6) xk1(7)]);
+% k = pathRef(3,i);
 
 if (i == length(pathRef(1,:)))
     finished = true;
@@ -26,9 +28,9 @@ if (any(isnan(max_k), 'all'))
     delta = delta;
 elseif (any(isnan(min_k), 'all'))
     delta = delta;
-elseif (max_k > 0.003)
+elseif (max_k > 0.006)
     delta = delta;
-elseif (min_k < -0.003)
+elseif (min_k < -0.006)
     delta = delta;
 else
     delta = delta * ratio;
@@ -40,9 +42,10 @@ bDot = 0;
 wzDot = 0;
 xJerk = 0;
 yJerk = 0;
+xJerk2 = 0;
 for ct = 1:M
     if (finished)
-        % xk1(1:5) = zeros(1,5);
+        xk1(1:5) = zeros(1,5);
         xk1(6:7) = pathRef(1:2,end);
     else
         dxk = carCT(xk1, uk);
@@ -51,8 +54,9 @@ for ct = 1:M
         wzDot = dxk(4);
         ax = dxk(8);
         ay = dxk(9);
-        xJerk = dxk(10);
-        yJerk = dxk(11);
+        xJerk = xJerk + dxk(10);
+        yJerk = yJerk + dxk(11);
+        xJerk2 = dxk(12);
     end
 end
 [i, dist] = dsearchn(pathRef(1:2,:)', [xk1(6) xk1(7)]);
@@ -63,4 +67,5 @@ xk1(11) = bDot;
 xk1(12) = wzDot;
 xk1(13) = xJerk;
 xk1(14) = yJerk;
+xk1(15) = xJerk2;
 
