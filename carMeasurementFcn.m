@@ -1,3 +1,3 @@
 function y = carMeasurementFcn(xk)
 
-y = xk(5);
+y = xk;
