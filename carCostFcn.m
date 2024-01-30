@@ -10,22 +10,11 @@ q1 = 0.5;
 q2 = 0.2;
 q3 = 0.15;
 q4 = 0.15;
-% q2 = 0.325;
-% q3 = 0.17;
-% q4 = 0.005;
 
 p = data.PredictionHorizon;
 
 J = 0;
 for i = 2:p+1
-    % J = J + ( (q1 * ((16.6-v)^2)) + (q3 * (xJark ^ 2)) + (q4 * (ax^2)) + (q5 * (ay^2)) );
-    % if (inCurve)
-    %     J = J + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
-    % % elseif (inStopping)
-    % %     J = J + (q1 * vx(i)^2) + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
-    % else
-    %     J = J + (q1 * (16 - vx(i))^2) + (q3 * (xJark ^ 2)) + (q4 * (ax(i)^2)) + (q5 * (ay^2));
-    % end
     if (inCurve == true)
         J = J + ((2*q2)^2 * (xJerk(i) ^ 2)) + ((2*q3)^2 * (ax(i)^2)) + ((2*q4)^2 * (ay(i)^2));
     else
@@ -37,7 +26,5 @@ for i = 2:p+1
     if(dist(i) > 1)
         J = 10000;
     end
-    % J = J + ye(i)^2 + wze(i) ^ 2;
-    % J = J + (16 - vx(i))^4;
 end
 
