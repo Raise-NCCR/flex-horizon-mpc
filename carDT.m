@@ -7,13 +7,9 @@ finished = false;
 
 ratio = 2;
 
-% % load('path.mat');
-% load("zhouXYPath.mat");
-
 global pathRef
 
 [i, ~] = dsearchn(pathRef(1:2,:)', [xk1(6) xk1(7)]);
-% k = pathRef(3,i);
 
 if (i == length(pathRef(1,:)))
     finished = true;

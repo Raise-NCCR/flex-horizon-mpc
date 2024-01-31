@@ -41,6 +41,4 @@ xJerk = jerk - a*b*wz - v*bDot*wz - v*b*wzDot;
 yJerk = a*bDot + jerk*b + a*bDot + a*wz + v*wzDot;
 xJerk2 = - a*b*wz - v*bDot*wz - v*b*wzDot;
 
-% axDot = 0;
-
 dxStatedt = [vDot, aDot, bDot, wzDot, psiDot, xDot, yDot, ax, ay, xJerk, yJerk, xJerk2];
