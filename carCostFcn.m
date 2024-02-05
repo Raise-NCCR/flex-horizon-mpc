@@ -1,10 +1,10 @@
-function J = carCostFcn(xState, ~, ~, data, ~, inCurve, ~)
+function J = carCostFcn(xState, ~, ~, data, ~, inCurve) %#codegen
 
 v = xState(:,1);
 dist = xState(:,8);
 ax = xState(:,9);
 ay = xState(:,10);
-xJerk = xState(:,13);
+xJerk = xState(:,11);
 
 q1 = 0.5;
 q2 = 0.2;

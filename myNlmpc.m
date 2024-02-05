@@ -1,15 +1,13 @@
 mpcverbosity('off');
-
-nx = 15; % v, a, b, wz, psi, x, y, dist, ax, ay, bDot, wzDot, xJerk, yJerk, xJerk2
+nx = 15; % v, a, b, wz, psi, x, y, dist, ax, ay, bDot, wzDot, xJerk, yJerk, i
 ny = 15; % same as x
 nu = 2; % j, delta
 nlobj = nlmpc(nx, ny, nu);
 
 ratio = 2;
 TsShort = 0.1;
-TsLong = TsShort * 2;
+TsLong = TsShort * ratio;
 Ts = TsShort;
-k = 0;
 ref = [];
 nlobj.Ts = TsShort;
 nlobj.PredictionHorizon = 30;
@@ -38,19 +36,19 @@ nlobj.Model.OutputFcn = "carOutputFcn";
 nlobj.Optimization.CustomCostFcn = "carCostFcn";
 nlobj.Optimization.ReplaceStandardCost = true;
 
-x0 = [16.7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
+x0 = [16.7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 1];
 y0 = x0;
 u0 = [0; 0];
 inCurve = false;
-inStopping = false;
 
 global pathRef
-load("path.mat");
-% load("zhouXYPath.mat");
+% load("path.mat");
+tmp = load("zhouXYPath.mat");
+pathRef = tmp.pathRef;
 
 % nlobj.Optimization.CustomEqConFcn = "endConFcn";
-nlobj.Model.NumberOfParameters = 3;
-validateFcns(nlobj, x0, u0, [], {Ts, inCurve, inStopping});
+nlobj.Model.NumberOfParameters = 2;
+% validateFcns(nlobj, x0, u0, [], {Ts, inCurve});
 
 EKF = extendedKalmanFilter(@carStateFcn, @carMeasurementFcn);
 x = x0;
@@ -59,7 +57,7 @@ EKF.State = x;
 mv = [0; 0];
 
 nloptions = nlmpcmoveopt;
-nloptions.Parameters = {Ts, inCurve, inStopping};
+nloptions.Parameters = {Ts, inCurve};
 
 Duration = 1000;
 tLength = Duration / Ts;
@@ -70,24 +68,21 @@ mvHistory(:, 1) = mv;
 
 index = 1;
 t = 0;
-started = false;
-endPoint = false;
 tic
 while t < Duration
     t
     xk = correct(EKF, y);
     xk(1)
-    i = dsearchn(pathRef(1:2,:)', [xk(6) xk(7)]);
+    i = xk(15);
     if (i > length(pathRef(1,:)) - 1000)
        break;
     end
-    inStopping = false;
     
     % simple position prediction
     pred_px = xk(6) + 3 * (cos(xk(5)) * xk(1) - sin(xk(5)) * xk(1) * xk(3));
     pred_py = xk(7) + 3 * (sin(xk(5)) * xk(1) + cos(xk(5)) * xk(1) * xk(3));
 
-    pred_i = dsearchn(pathRef(1:2,:)', [pred_px pred_py]);
+    pred_i = dsearchn(pathRef(1:2,i:end)', [pred_px pred_py]);
     max_k = max(pathRef(3,i:pred_i));
     min_k = min(pathRef(3,i:pred_i));
     
@@ -108,10 +103,10 @@ while t < Duration
         TsTmp = TsLong;
         inCurve = false;
     end
-    nloptions.Parameters = {Ts, inCurve, inStopping};
+    nloptions.Parameters = {Ts, inCurve};
     [mv,nloptions] = nlmpcmove(nlobj,x,mv,ref,[],nloptions);
-    predict(EKF,[mv; Ts; inCurve; inStopping]);
-    x = carDT(x, mv, Ts, inCurve, inStopping);
+    predict(EKF,[mv; Ts; inCurve;]);
+    x = carDT(x, mv, Ts, inCurve);
     y = x;
     index = index + 1;
     xHistory(:, index) = x;

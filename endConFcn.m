@@ -1,4 +1,4 @@
-function y = endConFcn(x, u, wb, Ts, inCurve, inStopping)
+function y = endConFcn(x, u, wb, Ts, inCurve)
 
     % load("zhouXYPath.mat");
 
